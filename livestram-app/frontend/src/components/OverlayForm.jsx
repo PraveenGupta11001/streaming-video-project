@@ -11,6 +11,7 @@ export default function OverlayForm({ onOverlayAdded, editOverlay, clearEdit }) 
     color: "white",
     scale: 100,
     image: "",
+    label: "", // <-- new field for image label/name
   });
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function OverlayForm({ onOverlayAdded, editOverlay, clearEdit }) 
         color: editOverlay.color || "white",
         scale: editOverlay.scale ?? 100,
         image: editOverlay.image || "",
+        label: editOverlay.label || "", // load label if exists
       });
     }
   }, [editOverlay]);
@@ -37,9 +39,13 @@ export default function OverlayForm({ onOverlayAdded, editOverlay, clearEdit }) 
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
-      // Strip prefix before saving
       const base64 = reader.result.replace(/^data:image\/\w+;base64,/, "");
-      setForm({ ...form, image: base64, type: "image" });
+      setForm({
+        ...form,
+        image: base64,
+        type: "image",
+        label: file.name.split(".")[0], // default label = filename without extension
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -64,12 +70,13 @@ export default function OverlayForm({ onOverlayAdded, editOverlay, clearEdit }) 
       color: "white",
       scale: 100,
       image: "",
+      label: "",
     });
     onOverlayAdded();
   };
 
   return (
-    <div className="p-6 bg-gray-800 rounded-lg shadow-md w-full">
+    <div className="p-6 bg-gray-800 rounded-lg shadow-md w-full md:w-[90%] max-h-[85vh] overflow-auto">
       <h2 className="text-xl font-semibold mb-4 text-white">
         {editOverlay ? "Update Overlay" : "Add Overlay"}
       </h2>
@@ -128,21 +135,34 @@ export default function OverlayForm({ onOverlayAdded, editOverlay, clearEdit }) 
 
         {/* Image Input */}
         {form.type === "image" && (
-          <div>
-            <label className="block text-gray-300 mb-1">Upload Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full p-2 rounded bg-gray-700 text-white"
-            />
-            {form.image && (
-              <img
-                src={`data:image/png;base64,${form.image}`}
-                alt="preview"
-                className="mt-2 max-h-32"
+          <>
+            <div>
+              <label className="block text-gray-300 mb-1">Upload Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full p-2 rounded bg-gray-700 text-white"
               />
-            )}
+              {form.image && (
+                <img
+                  src={`data:image/png;base64,${form.image}`}
+                  alt="preview"
+                  className="mt-2 max-h-32"
+                />
+              )}
+            </div>
+            <div>
+              <label className="block text-gray-300 mb-1">Image Label</label>
+              <input
+                name="label"
+                type="text"
+                value={form.label}
+                onChange={handleChange}
+                placeholder="e.g. Logo, Watermark"
+                className="w-full p-2 rounded bg-gray-700 text-white"
+              />
+            </div>
             <div>
               <label className="block text-gray-300 mb-1">Scale (%)</label>
               <input
@@ -153,7 +173,7 @@ export default function OverlayForm({ onOverlayAdded, editOverlay, clearEdit }) 
                 className="w-full p-2 rounded bg-gray-700 text-white"
               />
             </div>
-          </div>
+          </>
         )}
 
         {/* Coordinates */}
