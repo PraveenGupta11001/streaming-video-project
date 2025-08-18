@@ -1,7 +1,8 @@
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, send_from_directory, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
+from bson import ObjectId
 from dotenv import load_dotenv
 import os
 
@@ -25,7 +26,6 @@ db = client["livesitterDB"]
 overlays = db["overlays"]
 
 # ---- HLS Streaming ----
-# HLS output directory: project_root/mystream/
 HLS_DIR = os.path.join(os.path.dirname(__file__), "../../mystream")
 
 @app.route("/hls/<path:filename>")
@@ -39,9 +39,36 @@ def get_overlays():
     """Return all overlays from MongoDB"""
     data = []
     for o in overlays.find():
-        o["_id"] = str(o["_id"])  # Convert ObjectId to string
+        o["_id"] = str(o["_id"])  # Convert ObjectId to string for frontend
         data.append(o)
     return jsonify(data)
+
+@app.route("/api/overlays", methods=["POST"])
+def add_overlay():
+    """Add a new overlay"""
+    data = request.json
+    result = overlays.insert_one(data)
+    return jsonify({"message": "Overlay added!", "id": str(result.inserted_id)}), 201
+
+@app.route("/api/overlays/<overlay_id>", methods=["DELETE"])
+def delete_overlay(overlay_id):
+    """Delete an overlay by ID"""
+    try:
+        oid = ObjectId(overlay_id)  # convert string to ObjectId
+    except:
+        return jsonify({"message": "Invalid overlay ID"}), 400
+
+    result = overlays.delete_one({"_id": oid})
+    if result.deleted_count == 1:
+        return jsonify({"message": "Overlay deleted!"}), 200
+    else:
+        return jsonify({"message": "Overlay not found!"}), 404
+
+@app.route("/api/overlays", methods=["DELETE"])
+def delete_all_overlays():
+    """Delete ALL overlays"""
+    result = overlays.delete_many({})
+    return jsonify({"message": f"Deleted {result.deleted_count} overlays"}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
