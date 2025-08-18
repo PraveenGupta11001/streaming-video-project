@@ -23,6 +23,7 @@ export default function OverlayTable({ overlays, onUpdated, setEditOverlay }) {
             <th className="p-2">Content</th>
             <th className="p-2">Label</th>
             <th className="p-2">Coords</th>
+            <th className="p-2">Scale</th> {/* ✅ added scale */}
             <th className="p-2">Actions</th>
           </tr>
         </thead>
@@ -32,9 +33,8 @@ export default function OverlayTable({ overlays, onUpdated, setEditOverlay }) {
               <td className="p-2">{o.type}</td>
               <td className="p-2">{o.type === "text" ? o.text : "[Image]"}</td>
               <td className="p-2">{o.type === "image" ? o.label || "—" : "—"}</td>
-              <td className="p-2">
-                ({o.x}, {o.y})
-              </td>
+              <td className="p-2">({o.x}, {o.y})</td>
+              <td className="p-2">{o.type === "image" ? `${o.scale}%` : "—"}</td> {/* ✅ show scale only for images */}
               <td className="p-2 flex gap-2">
                 <button onClick={() => toggleVisibility(o._id)}>
                   {o.visible ? (
