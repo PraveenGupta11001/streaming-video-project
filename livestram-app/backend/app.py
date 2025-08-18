@@ -43,12 +43,59 @@ def get_overlays():
         data.append(o)
     return jsonify(data)
 
+@app.route("/api/overlays/<overlay_id>", methods=["GET"])
+def get_overlay(overlay_id):
+    """Return a specific overlay by ID"""
+    try:
+        oid = ObjectId(overlay_id)  # convert string to ObjectId
+        overlay = overlays.find_one({"_id": oid})
+        if overlay:
+            overlay["_id"] = str(overlay["_id"])
+            return jsonify(overlay)
+        else:
+            return jsonify({"message": "Overlay not found"}), 404
+    except Exception as e:
+        return jsonify({"message": "Invalid overlay ID", "error": str(e)}), 400
+
 @app.route("/api/overlays", methods=["POST"])
 def add_overlay():
     """Add a new overlay"""
     data = request.json
     result = overlays.insert_one(data)
     return jsonify({"message": "Overlay added!", "id": str(result.inserted_id)}), 201
+
+
+
+@app.route("/api/overlays/<overlay_id>", methods=["PUT"])
+def update_overlay(overlay_id):
+    """Update an existing overlay by ID"""
+    data = request.json
+    if not data:
+        return jsonify({"message": "No data provided"}), 400
+
+    try:
+        oid = ObjectId(overlay_id)
+        result = overlays.update_one({"_id": oid}, {"$set": data})
+        if result.matched_count == 0:
+            return jsonify({"message": "Overlay not found"}), 404
+        return jsonify({"message": "Overlay updated!"}), 200
+    except Exception as e:
+        return jsonify({"message": "Invalid overlay ID", "error": str(e)}), 400
+    
+@app.route("/api/overlays/<overlay_id>/update", methods=["PATCH"])
+def patch_overlay(overlay_id):
+    """Partially update an existing overlay by ID"""
+    data = request.json
+    try:
+        oid = ObjectId(overlay_id)
+        overlay = overlays.find_one({"_id": oid})
+        if overlay:
+            overlays.update_one({"_id": oid}, {"$set": data})
+            return jsonify({"message": "Overlay partially updated!"}), 200
+        else:
+            return jsonify({"message": "Overlay not found!"}), 404
+    except Exception as e:
+        return jsonify({"message": "Invalid overlay ID", "error": str(e)}), 400
 
 @app.route("/api/overlays/<overlay_id>", methods=["DELETE"])
 def delete_overlay(overlay_id):
